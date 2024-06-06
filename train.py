@@ -12,10 +12,10 @@ IMG_CHANNELS = 1
 BATCH_SIZE = 16
 
 # Directories
-train_images_dir = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/train_3/train/images'
-train_masks_dir = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/train_3/train/masks'
-val_images_dir = 'train_3/val/images'
-val_masks_dir = 'train_3/val/masks'
+train_images_dir = r'train_3_gray\train\images'
+train_masks_dir = r'train_3_gray\train\masks'
+val_images_dir = r'train_3_gray\val\images'
+val_masks_dir = r'train_3_gray\val\masks'
 
 # Function to check if an image is valid
 def is_image_valid(image_path):
@@ -157,13 +157,13 @@ def jaccard_loss(y_true, y_pred):
 model = unet_model()
 
 # Compile the model with binary cross-entropy (BCE) and Jaccard loss, and metrics including accuracy and MeanIoU
-model.compile(optimizer='adam', loss=['binary_crossentropy', jaccard_loss], metrics=[ MeanIoU(num_classes=2)])
+model.compile(optimizer='adam', loss=['binary_crossentropy', jaccard_loss], metrics=['accuracy', MeanIoU(num_classes=2)])
 
 # Train the model
 steps_per_epoch = len(train_image_paths) // BATCH_SIZE
 validation_steps = len(val_image_paths) // BATCH_SIZE
 
-num_epochs = 20 # Specify the number of epochs
+num_epochs = 30 # Specify the number of epochs
 
 # Now, you can use the modified generators in the model.fit() function
 history = model.fit(
@@ -175,7 +175,7 @@ history = model.fit(
 )
 
 # Save the model
-model.save('beard_segmentation_model_gray_224.h5')
+model.save('beard_segmentation_model_graycrop_224.h5')
 
 from keras import backend as K
 K.clear_session()

@@ -10,7 +10,7 @@ model = YOLO('/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/yolo
 input_image_dir = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/test_images/test_images'
 
 # Directory for output images
-output_base_folder = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/test_images_gray_cropped'
+output_base_folder = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/test_images_gray_cropped_resized'
 output_image_dir = os.path.join(output_base_folder, 'test/images')
 output_mask_dir = os.path.join(output_base_folder, 'test/masks')
 
@@ -23,6 +23,7 @@ if not os.path.exists(output_mask_dir):
 def crop_and_save(image_path, mask_path, output_image_path, output_mask_path, delta=20):
     # Read the image
     image = cv2.imread(image_path, 0)
+    image=cv2.resize(image,(224,224))
 
     if not os.path.exists(mask_path):
         print(f"Mask file does not exist for {image_path}. Skipping...")
@@ -30,6 +31,7 @@ def crop_and_save(image_path, mask_path, output_image_path, output_mask_path, de
 
     # Read the mask
     mask = cv2.imread(mask_path, 0)
+    
 
     if image is not None and mask is not None:
         # Detect faces in the image
@@ -48,8 +50,6 @@ def crop_and_save(image_path, mask_path, output_image_path, output_mask_path, de
             # Crop the image and mask
             cropped_image = image[y1:y2, x1:x2]
             cropped_mask = mask[y1:y2, x1:x2]
-
-            # Save cropped images
             cv2.imwrite(output_image_path, cropped_image)
             cv2.imwrite(output_mask_path, cropped_mask)
             print(f"Cropped and saved {os.path.basename(image_path)} and corresponding mask.")

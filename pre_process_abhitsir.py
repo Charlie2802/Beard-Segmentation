@@ -18,6 +18,10 @@ def brighten(image_path):
     imb = cv2.resize(gg, (gray.shape[1], gray.shape[0]))
     new = gray * (170 / imb)
     return new
+def resize(image):
+    resized_image=cv2.resize(image,(224,224))
+    
+    return resized_image
 
 # Create output directories
 output_dir_t1 = "test_images_gray_cropped_t1"
@@ -26,7 +30,7 @@ os.makedirs(output_dir_t1, exist_ok=True)
 os.makedirs(output_dir_t2, exist_ok=True)
 
 # Input directory
-input_dir = "/Users/aaditya/Desktop/Beard-Segmentation/test_images_gray_cropped/images"
+input_dir = "test_images_gray_cropped\images"
 
 # Process each image
 image_files = os.listdir(input_dir)
@@ -35,8 +39,9 @@ for image_file in image_files:
     
     # Apply transformations
     transformed_image = transform_image(image_path)
+    transformed_image=resize(transformed_image)
     brightened_image = brighten(image_path)
-    
+    brightened_image=resize(brightened_image)
     # Save transformed images
     transformed_image_path = os.path.join(output_dir_t1, image_file)
     brightened_image_path = os.path.join(output_dir_t2, image_file)
