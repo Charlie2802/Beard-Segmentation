@@ -8,14 +8,14 @@ from keras.metrics import MeanIoU
 # Constants
 IMG_WIDTH = 224
 IMG_HEIGHT = 224
-IMG_CHANNELS = 3
+IMG_CHANNELS = 1
 BATCH_SIZE = 16
 
 # Directories
-train_images_dir = r'C:\Users\jarvis\Downloads\FINAL_BEARD_DATASET_UPDATED\train_2\train\images'
-train_masks_dir = r'C:\Users\jarvis\Downloads\FINAL_BEARD_DATASET_UPDATED\train_2\train\masks'
-val_images_dir = r'C:\Users\jarvis\Downloads\FINAL_BEARD_DATASET_UPDATED\\train_2\val\images'
-val_masks_dir = r'C:\Users\jarvis\Downloads\FINAL_BEARD_DATASET_UPDATED\train_2\val\masks'
+train_images_dir = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/train_3/train/images'
+train_masks_dir = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/train_3/train/masks'
+val_images_dir = 'train_3/val/images'
+val_masks_dir = 'train_3/val/masks'
 
 # Function to check if an image is valid
 def is_image_valid(image_path):
@@ -49,7 +49,7 @@ class DataGenerator(Sequence):
         masks = []
 
         for img_path, mask_path in zip(batch_image_paths, batch_mask_paths):
-            image = tf.keras.preprocessing.image.load_img(img_path, target_size=self.img_size)
+            image = tf.keras.preprocessing.image.load_img(img_path, target_size=self.img_size, color_mode="grayscale")
             image = tf.keras.preprocessing.image.img_to_array(image) / 255.0
 
             mask = tf.keras.preprocessing.image.load_img(mask_path, target_size=self.img_size, color_mode="grayscale")
@@ -65,14 +65,6 @@ class DataGenerator(Sequence):
         np.random.shuffle(indices)
         self.image_paths = [self.image_paths[i] for i in indices]
         self.mask_paths = [self.mask_paths[i] for i in indices]
-
-# Function to create the U-Net model
-
-# U-Net model architecture
-import tensorflow as tf
-
-# U-Net model architecture with UpSampling2D
-import tensorflow as tf
 
 # U-Net model architecture with UpSampling2D
 def unet_model(input_size=(IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS)):
@@ -155,8 +147,6 @@ assert len(val_mask_paths) > 0, "Validation mask paths are empty!"
 train_generator = DataGenerator(train_image_paths, train_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))
 val_generator = DataGenerator(val_image_paths, val_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))
 
-
-
 def jaccard_loss(y_true, y_pred):
     intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2))
     sum_ = tf.reduce_sum(y_true + y_pred, axis=(1, 2))
@@ -174,8 +164,6 @@ steps_per_epoch = len(train_image_paths) // BATCH_SIZE
 validation_steps = len(val_image_paths) // BATCH_SIZE
 
 num_epochs = 20 # Specify the number of epochs
-# train_generator = train_generator.repeat(num_epochs)
-# val_generator = val_generator.repeat(num_epochs)
 
 # Now, you can use the modified generators in the model.fit() function
 history = model.fit(
@@ -186,8 +174,8 @@ history = model.fit(
     epochs=num_epochs
 )
 
-
 # Save the model
-model.save('beard_segmentation_model_224.h5')
+model.save('beard_segmentation_model_gray_224.h5')
+
 from keras import backend as K
 K.clear_session()
