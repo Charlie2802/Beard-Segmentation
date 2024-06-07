@@ -38,8 +38,6 @@ def convert_images_to_grayscale(input_folder, output_folder):
             print(f"Converted and saved {filename} to grayscale.")
         else:
             print(f"Failed to read {filename}. Skipping...")
-
-# Process each input folder
 for key, input_folder in input_folders.items():
     output_folder = os.path.join(output_base_folder, key, 'images')
     convert_images_to_grayscale(input_folder, output_folder)
