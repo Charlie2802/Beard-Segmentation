@@ -4,13 +4,13 @@ import numpy as np
 from ultralytics import YOLO
 
 # Load the YOLOv8 face detection model
-model = YOLO('/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/yolov8n-face.pt')
+model = YOLO(r'yolov8n-face.pt')
 
 # Directory for input images
-input_image_dir = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/test_images/test_images'
+input_image_dir = r'C:\Users\jarvis\Downloads\FINAL_BEARD_DATASET_UPDATED\test_rahulsir'
 
 # Directory for output images
-output_base_folder = '/Users/aaditya/Desktop/Beard_Segementation/Beard-Segmentation/test_images_gray_cropped_resized'
+output_base_folder = r'test_rahulsir_graycrop'
 output_image_dir = os.path.join(output_base_folder, 'test/images')
 output_mask_dir = os.path.join(output_base_folder, 'test/masks')
 
