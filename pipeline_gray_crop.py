@@ -4,6 +4,7 @@ import numpy as np
 from ultralytics import YOLO
 
 # Load the YOLOv8 face detection model
+<<<<<<< HEAD
 model = YOLO('yolov8n-face.pt')
 
 # Directory for input images
@@ -11,6 +12,15 @@ input_image_dir = 'test_rahulsir'
 
 # Directory for output images
 output_base_folder = 'test_rahulsir_graycrop'
+=======
+model = YOLO(r'yolov8n-face.pt')
+
+# Directory for input images
+input_image_dir = r'C:\Users\jarvis\Downloads\FINAL_BEARD_DATASET_UPDATED\test_rahulsir'
+
+# Directory for output images
+output_base_folder = r'test_rahulsir_graycrop'
+>>>>>>> 2d188d38121ba8bcdecb32c96e4a4974627aa9b1
 output_image_dir = os.path.join(output_base_folder, 'test/images')
 output_mask_dir = os.path.join(output_base_folder, 'test/masks')
 
