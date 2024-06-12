@@ -11,8 +11,8 @@ IMG_HEIGHT = 224
 IMG_CHANNELS = 1
 BATCH_SIZE = 16
 
-test_images_dir = r'test_images_gray_cropped\images'
-results_dir = r'results_model_gray_crop_224_gamma_corrected'
+test_images_dir = r'test_rahulsir'
+results_dir = r'results_rahusir_graycrop'
 
 # Create results directory if it doesn't exist
 os.makedirs(results_dir, exist_ok=True)
@@ -32,7 +32,7 @@ def load_image_paths(image_dir):
 test_image_paths = load_image_paths(test_images_dir)
 print(len(test_image_paths))
 
-model = load_model('beard_segmentation_model_gray_224.h5', compile=False)
+model = load_model('/Users/aaditya/Desktop/Beard-Segmentation/beard_segmentation_model_224.h5', compile=False)
 
 def dynamic_gamma_correction(image, average_target=150):
     tar = image[image > 0]  # Only consider non-zero pixels
@@ -48,7 +48,9 @@ def dynamic_gamma_correction(image, average_target=150):
 
 for image_path in test_image_paths:
     print(f"Processing image: {image_path}")
-    image = tf.keras.preprocessing.image.load_img(image_path, target_size=(IMG_WIDTH, IMG_HEIGHT), color_mode='grayscale')
+    x=cv2.imread(image_path)
+    w,h,_=x.shape
+    image = tf.keras.preprocessing.image.load_img(image_path, target_size=(IMG_WIDTH, IMG_HEIGHT))
     input_image = np.expand_dims(tf.keras.preprocessing.image.img_to_array(image) / 255.0, axis=0)
     input_image_normalized = (input_image[0] * 255).astype(np.uint8)
     gamma_corrected_image = dynamic_gamma_correction(input_image_normalized)
@@ -56,9 +58,11 @@ for image_path in test_image_paths:
     prediction = model.predict(input_image)
     threshold = 0.65
     binary_mask = (prediction > threshold).astype(np.uint8)
+    binary_mask=cv2.resize(binary_mask,1)
 
     prediction1 = model.predict(gamma_corrected_image)[0]
     binary_mask1 = (prediction1 > threshold).astype(np.uint8)
+
 
     print(sum(sum(binary_mask1)))
 
