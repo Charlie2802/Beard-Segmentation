@@ -25,18 +25,29 @@ def is_image_valid(image_path):
         return True
     except (IOError, Image.DecompressionBombError, Image.UnidentifiedImageError):
         return False
+import albumentations as A
+from albumentations.core.composition import Compose
 
-# Data generator class
+# Define the augmentation pipeline with Albumentations
+def get_training_augmentation():
+    return A.Compose([
+        A.Resize(height=IMG_HEIGHT, width=IMG_WIDTH, always_apply=True), 
+        A.HorizontalFlip(p=0.5),  # Horizontally flip 50% of the images
+        A.RandomBrightnessContrast(p=0.2),  # Apply random brightness and contrast adjustments
+        A.Rotate(limit=20, p=0.5),  # Randomly rotate images by ±20 degrees 50% of the time
+         # Resize images to model input dimensions
+    ])
+
 class DataGenerator(Sequence):
-    def __init__(self, image_paths, mask_paths, batch_size, img_size):
-        self.image_paths = [path for path in image_paths if is_image_valid(path)]
-        self.mask_paths = [path for path in mask_paths if is_image_valid(path)]
+    def __init__(self, image_paths, mask_paths, batch_size, img_size, augmentation=None):
+        self.image_paths = image_paths
+        self.mask_paths = mask_paths
         self.batch_size = batch_size
         self.img_size = img_size
+        self.augmentation = augmentation
         self.on_epoch_end()
 
     def __len__(self):
-        # Ensure at least one batch is returned even if there are fewer images than the batch size
         return int(np.ceil(len(self.image_paths) / float(self.batch_size)))
 
     def __getitem__(self, index):
@@ -49,24 +60,55 @@ class DataGenerator(Sequence):
         masks = []
 
         for img_path, mask_path in zip(batch_image_paths, batch_mask_paths):
-            image = tf.keras.preprocessing.image.load_img(img_path, target_size=self.img_size, color_mode="grayscale")
-            image = tf.keras.preprocessing.image.img_to_array(image) / 255.0
-
-            mask = tf.keras.preprocessing.image.load_img(mask_path, target_size=self.img_size, color_mode="grayscale")
-            mask = tf.keras.preprocessing.image.img_to_array(mask) / 255.0
-
+            image, mask = self.process_images_masks(img_path, mask_path)
             images.append(image)
             masks.append(mask)
 
         return np.array(images), np.array(masks)
 
-    def on_epoch_end(self):
-        indices = np.arange(len(self.image_paths))
-        np.random.shuffle(indices)
-        self.image_paths = [self.image_paths[i] for i in indices]
-        self.mask_paths = [self.mask_paths[i] for i in indices]
+    def process_images_masks(self, img_path, mask_path):
+        """ Process and augment images and masks """
+        # Load images and convert to grayscale
+        image = np.array(Image.open(img_path).convert('L'))
+        mask = np.array(Image.open(mask_path).convert('L'))
 
-# U-Net model architecture with UpSampling2D
+        # Resize images and masks before augmentation
+        resize = A.Resize(height=self.img_size[0], width=self.img_size[1], always_apply=True)
+        image = resize(image=image)['image']
+        mask = resize(image=mask)['image']
+
+        if self.augmentation:
+            augmented = self.augmentation(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+
+        # Normalize the images and masks
+        image = image.astype(np.float32) / 255.0
+        mask = mask.astype(np.float32) / 255.0
+
+        return image, mask
+
+    def on_epoch_end(self):
+        # Optional: shuffle the data at the end of each epoch
+        temp = list(zip(self.image_paths, self.mask_paths))
+        np.random.shuffle(temp)
+        self.image_paths, self.mask_paths = zip(*temp)
+
+# Instantiate the data generators
+def load_image_mask_paths(image_dir, mask_dir):
+    image_paths = sorted([os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if is_image_valid(os.path.join(image_dir, fname))])
+    mask_paths = sorted([os.path.join(mask_dir, fname) for fname in os.listdir(mask_dir) if is_image_valid(os.path.join(mask_dir, fname))])
+    return image_paths, mask_paths
+
+# Load training and validation data paths
+train_image_paths, train_mask_paths = load_image_mask_paths(train_images_dir, train_masks_dir)
+val_image_paths, val_mask_paths = load_image_mask_paths(val_images_dir, val_masks_dir)
+
+train_augmentation = get_training_augmentation()
+train_generator = DataGenerator(train_image_paths, train_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT), augmentation=train_augmentation)
+val_generator = DataGenerator(val_image_paths, val_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))  # No augmentation for validation data
+
+
 def unet_model(input_size=(IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS)):
     inputs = tf.keras.layers.Input(input_size)
     s = tf.keras.layers.Lambda(lambda x: x / 255)(inputs)
@@ -129,25 +171,13 @@ def unet_model(input_size=(IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS)):
     return model
 
 
-
-
-# Load image and mask paths
-def load_image_mask_paths(image_dir, mask_dir):
-    image_paths = sorted([os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if is_image_valid(os.path.join(image_dir, fname))])
-    mask_paths = sorted([os.path.join(mask_dir, fname) for fname in os.listdir(mask_dir) if is_image_valid(os.path.join(mask_dir, fname))])
-    return image_paths, mask_paths
-
-# Load training and validation data paths
-train_image_paths, train_mask_paths = load_image_mask_paths(train_images_dir, train_masks_dir)
-val_image_paths, val_mask_paths = load_image_mask_paths(val_images_dir, val_masks_dir)
-
 # Ensure non-empty validation data
 assert len(val_image_paths) > 0, "Validation image paths are empty!"
 assert len(val_mask_paths) > 0, "Validation mask paths are empty!"
 
 # Create data generators
-train_generator = DataGenerator(train_image_paths, train_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))
-val_generator = DataGenerator(val_image_paths, val_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))
+# train_generator = DataGenerator(train_image_paths, train_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))
+# val_generator = DataGenerator(val_image_paths, val_mask_paths, BATCH_SIZE, (IMG_WIDTH, IMG_HEIGHT))
 
 def jaccard_loss(y_true, y_pred):
     intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2))
@@ -168,14 +198,14 @@ validation_steps = len(val_image_paths) // BATCH_SIZE
 
 num_epochs = 30 # Specify the number of epochs
 
-# # Now, you can use the modified generators in the model.fit() function
-# history = model.fit(
-#     train_generator,
-#     validation_data=val_generator,
-#     steps_per_epoch=steps_per_epoch,
-#     validation_steps=validation_steps,
-#     epochs=num_epochs
-# )
+# Now, you can use the modified generators in the model.fit() function
+history = model.fit(
+    train_generator,
+    validation_data=val_generator,
+    steps_per_epoch=steps_per_epoch,
+    validation_steps=validation_steps,
+    epochs=num_epochs
+)
 
 #Save the model
 model.save('beard_segmentation_model_graycrop_224.h5',include_optimizer=False)
