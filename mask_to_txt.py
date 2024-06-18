@@ -11,7 +11,7 @@ else:
     print(mask/255.0)  # Normalize the pixel values for viewing, not for processing
 
     # Adjust pixel values and ensure they are within the 0-255 range
-    mask = (mask - 0.5) * 1.5
+ 
     mask = np.clip(mask, 0, 255).astype(np.uint8)  # Clip values and convert to uint8
 
     # Find contours in the mask

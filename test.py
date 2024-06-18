@@ -11,8 +11,8 @@ IMG_HEIGHT = 224
 IMG_CHANNELS = 1
 BATCH_SIZE = 16
 
-test_images_dir = r'test_rahulsir'
-results_dir = r'results_rahusir_graycrop'
+test_images_dir = r'TEST_DATASETS/test_images_gray_cropped/images'
+results_dir = r'RESULTS/results_rewat'
 
 # Create results directory if it doesn't exist
 os.makedirs(results_dir, exist_ok=True)
@@ -32,7 +32,7 @@ def load_image_paths(image_dir):
 test_image_paths = load_image_paths(test_images_dir)
 print(len(test_image_paths))
 
-model = load_model('/Users/aaditya/Desktop/Beard-Segmentation/beard_segmentation_model_224.h5', compile=False)
+model = load_model('MODELS/beard_segmentation_model_gray_224.h5', compile=False)
 
 def dynamic_gamma_correction(image, average_target=150):
     tar = image[image > 0]  # Only consider non-zero pixels
@@ -48,9 +48,10 @@ def dynamic_gamma_correction(image, average_target=150):
 
 for image_path in test_image_paths:
     print(f"Processing image: {image_path}")
-    x=cv2.imread(image_path)
-    w,h,_=x.shape
-    image = tf.keras.preprocessing.image.load_img(image_path, target_size=(IMG_WIDTH, IMG_HEIGHT))
+    x=cv2.imread(image_path,0)
+    w,h=x.shape
+    print(w,h)
+    image = tf.keras.preprocessing.image.load_img(image_path, target_size=(IMG_WIDTH, IMG_HEIGHT),color_mode='grayscale')
     input_image = np.expand_dims(tf.keras.preprocessing.image.img_to_array(image) / 255.0, axis=0)
     input_image_normalized = (input_image[0] * 255).astype(np.uint8)
     gamma_corrected_image = dynamic_gamma_correction(input_image_normalized)
@@ -58,13 +59,9 @@ for image_path in test_image_paths:
     prediction = model.predict(input_image)
     threshold = 0.65
     binary_mask = (prediction > threshold).astype(np.uint8)
-    binary_mask=cv2.resize(binary_mask,1)
-
+    #binary_mask=cv2.resize(binary_mask,(w,h))
     prediction1 = model.predict(gamma_corrected_image)[0]
     binary_mask1 = (prediction1 > threshold).astype(np.uint8)
-
-
-    print(sum(sum(binary_mask1)))
 
     # Plot the results
     plt.figure(figsize=(12, 8))
@@ -88,11 +85,12 @@ for image_path in test_image_paths:
     plt.imshow(np.squeeze(binary_mask1), cmap='gray')
     plt.title('Predicted Mask (Gamma Corrected)')
     plt.axis('off')
+    plt.show()
 
-    # Save the subplot
-    base_filename = os.path.basename(image_path)
-    subplot_save_path = os.path.join(results_dir, f"result_{base_filename}.png")
-    plt.savefig(subplot_save_path)
-    plt.close()
+    # # Save the subplot
+    # base_filename = os.path.basename(image_path)
+    # subplot_save_path = os.path.join(results_dir, f"result_{base_filename}.png")
+    # plt.savefig(subplot_save_path)
+    # plt.close()
 
-    print(f"Saved results to {subplot_save_path}")
+    # print(f"Saved results to {subplot_save_path}")

@@ -12,10 +12,10 @@ IMG_CHANNELS = 1
 BATCH_SIZE = 16
 
 # Directories
-train_images_dir = r'train_3_gray\train\images'
-train_masks_dir = r'train_3_gray\train\masks'
-val_images_dir = r'train_3_gray\val\images'
-val_masks_dir = r'train_3_gray\val\masks'
+train_images_dir = r'TRAIN_DATASETS/train_3_gray/train/images'
+train_masks_dir = r'TRAIN_DATASETS/train_3_gray/train/masks'
+val_images_dir = r'TRAIN_DATASETS/train_3_gray/val/images'
+val_masks_dir = r'TRAIN_DATASETS/train_3_gray/val/masks'
 
 # Function to check if an image is valid
 def is_image_valid(image_path):
@@ -129,6 +129,8 @@ def unet_model(input_size=(IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS)):
     return model
 
 
+
+
 # Load image and mask paths
 def load_image_mask_paths(image_dir, mask_dir):
     image_paths = sorted([os.path.join(image_dir, fname) for fname in os.listdir(image_dir) if is_image_valid(os.path.join(image_dir, fname))])
@@ -155,6 +157,7 @@ def jaccard_loss(y_true, y_pred):
 
 # Create U-Net model
 model = unet_model()
+model.summary()
 
 # Compile the model with binary cross-entropy (BCE) and Jaccard loss, and metrics including accuracy and MeanIoU
 model.compile(optimizer='adam', loss=['binary_crossentropy', jaccard_loss], metrics=['accuracy', MeanIoU(num_classes=2)])
@@ -165,17 +168,17 @@ validation_steps = len(val_image_paths) // BATCH_SIZE
 
 num_epochs = 30 # Specify the number of epochs
 
-# Now, you can use the modified generators in the model.fit() function
-history = model.fit(
-    train_generator,
-    validation_data=val_generator,
-    steps_per_epoch=steps_per_epoch,
-    validation_steps=validation_steps,
-    epochs=num_epochs
-)
+# # Now, you can use the modified generators in the model.fit() function
+# history = model.fit(
+#     train_generator,
+#     validation_data=val_generator,
+#     steps_per_epoch=steps_per_epoch,
+#     validation_steps=validation_steps,
+#     epochs=num_epochs
+# )
 
-# Save the model
-model.save('beard_segmentation_model_graycrop_224.h5')
+#Save the model
+model.save('beard_segmentation_model_graycrop_224.h5',include_optimizer=False)
 
 from keras import backend as K
 K.clear_session()
